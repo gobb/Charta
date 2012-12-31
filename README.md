@@ -1,3 +1,10 @@
+### WARNING
+
+> This repo is totally experimental and you should use it at your own risk. And by that, what I
+> really mean is this: *DO NOT USE THIS IN PRODUCTION.* It's currently in an untagged, untested
+> state. Be careful.
+
+
 ## Charta: Automatic output escaping for native PHP Templates
 
 Charta is a templating system offering automatic output escaping in native
