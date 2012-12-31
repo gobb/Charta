@@ -29,38 +29,36 @@ itself a templating language).
 <body>
     <p><?php echo $_('myDate'); ?></p>
     <p><?php echo $_('dangerousHtml'); ?></p>
+    <p><?php echo $unsafe_myDateTimeObj->format('Y-m-d'); ?></p>
+    <p>
+        <?php
+        foreach ($_('dangerousArray') as $dangerousVal) {
+            echo "$dangerousVal<br />";
+        }
+        ?>
+    </p>
 </body>
 </html>
 ```
 
-###### 2. Inject `Charta\Templater` into your controller and assign template variables:
+###### 2. Assign template variables:
 
 ```php
 <?php
 
-use Charta\Templater;
-
-class MyController {
-
-    private $templater;
-    private $tplPath = '/path/to/myTemplate.php';
-    
-    public function __construct(Templater $templater) {
-        $templater->setCharset('UTF-8'); // UTF-8 is the default, so this isn't strictly necessary
-        $this->templater = $templater;
-    }
-    
-    public function doWork() {
-        $this->templater->assign('myDate', date('Y-m-d'));
-        $this->templater->assign('dangerousHtml', "<script>alert('attacked')</script>");
-        
-        return $this->templater->render($this->tplPath);
-    }
-}
-
 $tpl = new Templater;
-$controller = new MyController($templater);
-echo $controller->doWork();
+$tpl->setCharset('UTF-8'); // UTF-8 is the default, so this isn't strictly necessary
+$tpl->assign('myDate', date('Y-m-d'));
+$tpl->assign('dangerousHtml', "<script>alert('attacked')</script>");
+$tpl->assign('dangerousArray', array(
+    "<script>alert('you')</script>",
+    "<script>alert('got')</script>",
+    "<script>alert('h4x0rd')</script>"
+));
+
+$tpl->assignUnsafe('myDateTimeObj', new DateTime);
+
+$tpl->output($this->tplPath);
 ```
 
 ###### 3. Observe your safely escaped output:
@@ -70,6 +68,12 @@ Instead of outputting the vulnerable:
 ```HTML
 <p>2012-12-31</p>
 <p><script>alert('attacked')</script></p>
+<p>
+    <script>alert('you')</script>
+    <script>alert('got')</script>
+    <script>alert('h4x0rd')</script>
+</p>
+<p>2012-12-31</p>
 ```
 
 Charta's auto-escape feature safely escapes your data to prevent XSS:
@@ -77,24 +81,28 @@ Charta's auto-escape feature safely escapes your data to prevent XSS:
 ```HTML
 <p>2012-12-31</p>
 <p>&lt;script&gt;alert(&#039;attacked&#039;)&lt;/script&gt;</p>
+<p>
+    &lt;script&gt;alert(&#039;you&#039;)&lt;/script&gt;<br />
+    &lt;script&gt;alert(&#039;got&#039;)&lt;/script&gt;<br />
+    &lt;script&gt;alert(&#039;h4x0rd&#039;)&lt;/script&gt;<br />
+</p>
+<p>2012-12-31</p>
 ```
 
 
-### COMMANDS
+### INSIDE YOUR TEMPLATES ...
 
-##### Utility Functions
+##### Utilities
 ```
-Turn auto-escaping on/off:                  $autoEscape(TRUE); // Enabled by default
-Switch escaping context:                    $context('html');  // HTML context used by default
-                                            $context('js');
-                                            $context('css');
+Toggle auto-escaping (On by default):       $autoEscapeOn(); | $autoEscapeOff();
+Switch escaping context (HTML default):     $contextHtml(); | $contextJs(); | $contextCss();
 One-off escape contexts:                    $html('someVar');
                                             $js('someVar');
                                             $css('someVar');
 Test if a template variable exists:         $isAssigned('someVar');
 ```
 
-##### Accessing Template Variables
+##### Accessing Assigned Template Variables
 ```
 Get value subject to autoescaping:          $get('someVar'); | $_('someVar');
 Get escaped value subject to context:       $esc('someVar'); | $x('someVar');
