@@ -2,7 +2,8 @@
 
 namespace Charta;
 
-use Traversable,
+use StdClass,
+    Traversable,
     DomainException,
     InvalidArgumentException;
 
